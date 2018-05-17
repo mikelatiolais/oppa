@@ -13,6 +13,7 @@ typedef unsigned char  UINT8;
 #define pinDotClock 10 // DMD pin 9
 #define pinDotData  11 // DMD pin 11
 #define OPPA_NUM_OF_BYTES 512 // 4096 / 8 bits
+#define OPPA_NUM_OF_ROWS 32
 
 void oppaInitDMD();
 void oppaUpdateDMD(UINT8 *dotData);
