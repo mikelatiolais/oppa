@@ -20,6 +20,5 @@ void main() {
       /* Update the DMD */
       oppaUpdateDMD(dmddata);
     }
-  
   }
 }
