@@ -12,6 +12,14 @@ void oppaInitDMD() {
   pinMode(pinColLatch, OUTPUT);
   pinMode(pinDotClock, OUTPUT);
   pinMode(pinDotData, OUTPUT);
+
+  /* Drive everything low to start */
+  digitalWrite(pinDisplayEnable, LOW);
+  digitalWrite(pinRowData, LOW);
+  digitalWrite(pinRowClock, LOW);
+  digitalWrite(pinColLatch, LOW);
+  digitalWrite(pinDotClock, LOW);
+  digitalWrite(pinDotData, LOW);
 }
 
 /* Take in array and update the DMD directly */
@@ -25,6 +33,7 @@ void oppaUpdateDMD(UINT8 *dotData) {
 
     /* Latch the row of data */
     digitalWrite(pinColLatch, HIGH);
+    delayMicroseconds(100);  
     digitalWrite(pinColLatch, LOW);
 
     /* Turn off the display while we latch in the this row */
@@ -33,16 +42,19 @@ void oppaUpdateDMD(UINT8 *dotData) {
     /* From Vishay doc: Once each frame the ROW DATA must be asserted to synchronize the column serial data with the beginning row */
     if(row == 0) { 
       digitalWrite(pinRowData, HIGH);
+      delayMicroseconds(10);  
     } else {
       digitalWrite(pinRowData, LOW);
+      delayMicroseconds(10);  
     }
     /* Advance the row pointer */
     digitalWrite(pinRowClock, LOW);   
     /* Minimum 1us dip */
-    delayMicroseconds(1);  
+    delayMicroseconds(10);  
     digitalWrite(pinRowClock, HIGH);
 
     /* Reenable display */
     digitalWrite(pinDisplayEnable, HIGH); 
+    delayMicroseconds(100);
   }
 }

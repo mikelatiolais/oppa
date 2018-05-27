@@ -8,11 +8,13 @@
 
 void main() {
   UINT8 dmddata[OPPA_NUM_OF_BYTES]; 
+  
+  oppaInitDMD();
 
   /* Keep looping */
   while(1) {
     /* Cycle through values of byte */
-    for(int val = 0; val < 9; val++) {
+    for(int val = 0; val < 256; val++) {
       /* Fill the array with the same value */
       for (int i = 0; i < OPPA_NUM_OF_BYTES; ++i){
         dmddata[i] = val;
