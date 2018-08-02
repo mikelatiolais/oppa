@@ -1,5 +1,10 @@
 Embedded C coding standard:
-https://barrgroup.com/Embedded-Systems/Books/Embedded-C-Coding-Standard/Introduction
+- https://barrgroup.com/Embedded-Systems/Books/Embedded-C-Coding-Standard/Introduction
 
 Static checker:
-slint
+- slint
+
+Command-line arduino development (need to look into teensy build
+systems/Makefiles):
+- Arduino Ino
+- on Arch Linux: arduino-builder
