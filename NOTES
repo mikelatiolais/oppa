@@ -8,3 +8,85 @@ Command-line arduino development (need to look into teensy build
 systems/Makefiles):
 - Arduino Ino
 - on Arch Linux: arduino-builder
+
+
+Switch Reads
+============
+P-ROC reads switches every millisecond, stores state in register.  Register can
+be read at any time for switch state.  MPF implements its own
+debounce/ignore_window, so is MPF polling this register deciding when switch
+events happen?  If so, that seems very slow.  MPF is in python, and has to
+communicate with P-ROC over USB.  Perhaps I misunderstand this part.  I thought
+P-ROC would poll for state changes and notify MPF when a switch event happened.
+**Which platform is deciding when switch events happen?**
+
+We can use the interrupt from the MCP23017 to skip polling switches entirely
+for some loop iterations.  Not sure how much performance this will save us but
+its at least worth making it a config option to test it.
+
+We should consider reading different switches at different intervals: autofire
+switches should be read often, other switches like trough and start switches
+can be read a lot less.  A config can define a priority or classification for a
+switch which will determine how often the switch is checked for state changes.
+
+
+We'll poll switch state, do some debounce, check the ignore window on each
+switch to prevent multiple hits in some window, and then "emit a switch state
+change event", the implementation of which is still up in the air, but I'm
+thinking we can push a few bytes onto a queue, where each bit in the bytes
+represents if the state of a specific switch has changed.  This will allow us
+to signal that multiple switches have changed state in a single event, instead
+of pushing multiple events onto the queue (one for each switch).
+
+For example, the queue can conceptually hold values in this format:
+
+  <OP CODE> <ARGS>
+
+After a switch poll, we find that 2 of the 8 switches (in a simple example of a
+config with 8 switches) have changed state, so we push a value like this onto
+the queue:
+
+
+  SWITCH_STATE_CHANGE 00100001
+
+This value says that the switches mapped to the 1st and 6th bit have changed
+state.
+
+After the polling step, we can have a process step that processes some number
+of events from the "input queue".  If it saw the event in the above example, it
+would know that the switches related to the 1st and 6th bit have changed state,
+so it can take whatever actions are needed, say, updating the current switch
+state in some variable, autofiring a coil (i.e. pushing an "output event" onto
+the "output queue"), asking the game logic what should happen in response etc.
+The processing step can tell when switch events happened simultaneously, so
+we'll be able to respond to things like the user pressing both flippers at the
+same time, which may trigger ball launch or something else.  We may decide on a
+different implementation, but I'd like to be able to tell when two or more
+switches are pressed at the same time.
+
+
+
+Debouncing
+==========
+http://docs.missionpinball.org/en/dev/mechs/switches/debounce.html
+- Combine short debounce check with an ignore_window_ms that ignores switch
+  hits within the window.
+  - 4ms debounce time
+  - Or, "switch must be new state for 2 consecutive reads" like P-ROC.
+- According to the above article, none of the hardware platforms use interrupts
+  for switch reading, they poll at some interval.
+- If debounce eats too much processor time, consider hardware solution mixed
+  with ignore_window_ms.  MPF provides debouncing and ignore_window_ms, but
+  handling that in python just seems wrong and slow.  The hardware controller
+  should handle that, and let an MPF-style framework worry about game logic.
+- Pay particular attention to autofire switches connected to coils.  Electrical
+  interference and bouncy switches can hold the coils on for too long.  We
+  should implement MPF's idea of 'recycle' for coils: adding a small delay
+  before the coil is allowed to be fired again.
+
+
+
+
+TODO: PMW for coils.
+TODO: Burst switching needed for optos?  What does P-ROC use burst switching
+      for?
